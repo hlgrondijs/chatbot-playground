@@ -1,85 +1,103 @@
 import type { NextPage } from "next";
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { Button } from "~/components/Button";
+import { ChatBox } from "~/containers/ChatBox";
 
-interface ChatMessage {
+export interface ChatMessage {
   ts: Date;
   content: string;
   user: string;
 }
 
-const dateToTimestamp = (date: Date) => {
-  const h = date
-    .getHours()
-    .toLocaleString("en-US", { minimumIntegerDigits: 2, useGrouping: false });
-  const m = date
-    .getMinutes()
-    .toLocaleString("en-US", { minimumIntegerDigits: 2, useGrouping: false });
-  const s = date
-    .getSeconds()
-    .toLocaleString("en-US", { minimumIntegerDigits: 2, useGrouping: false });
-  return `${h}:${m}:${s}`;
-};
+interface AssistantSession {
+  messageHistory: ChatMessage[];
+  title: string;
+  ts: Date;
+}
 
 const ChatPage: NextPage = () => {
-  const [message, setMessage] = useState<string>("");
-  const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
+  const [sessions, setSessions] = useState<AssistantSession[]>([
+    {
+      messageHistory: [],
+      title: "1",
+      ts: new Date("2020-01-01"),
+    },
+    {
+      messageHistory: [],
+      title: "2",
+      ts: new Date("2020-02-02"),
+    },
+  ]);
+  const [curSessionIdx, setCurSessionIdx] = useState<number>();
+  const [selectedSession, setSelectedSession] = useState<AssistantSession>();
 
-  const submitMessage = (event: React.SyntheticEvent) => {
-    event.preventDefault();
-    const newChatHistory = [...chatHistory];
-    newChatHistory.push({
-      ts: new Date(),
-      content: message,
-      user: "user",
-    });
-    setChatHistory(newChatHistory);
-    setMessage("");
+  const updateCurrentSession = (newChatHistory: ChatMessage[]) => {
+    if (selectedSession === undefined || curSessionIdx == undefined) return;
+
+    const newS = [...sessions];
+    selectedSession.messageHistory = newChatHistory;
+    newS[curSessionIdx] = selectedSession;
+    setSessions(newS);
   };
 
-  const handleChatInputChange = (
-    event: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    setMessage(event.target.value);
+  const selectSession = (idx: number) => {
+    const sess = sessions[idx];
+    if (sess !== undefined) {
+      setSelectedSession(sess);
+      setCurSessionIdx(idx);
+    }
+  };
+
+  const addNewSession = () => {
+    const newSession: AssistantSession = {
+      messageHistory: [],
+      title: (sessions.length + 1).toString(),
+      ts: new Date(),
+    };
+    setSessions([...sessions, newSession]);
   };
 
   return (
     <div className="flex min-h-[100vh] items-center justify-center">
-      <div className="flex h-[90vh] w-[90vw] flex-col border border-black">
+      <div className="flex h-[100vh] w-[100vw] flex-col border border-black">
         <div className="bg-slate-400 p-2">
           <h3>ChatGPT Test Environment</h3>
         </div>
-        <div className="bg-slate-10 m-1 flex flex-grow flex-col-reverse overflow-scroll">
-          {chatHistory
-            .slice(0)
-            .reverse()
-            .map((msg, idx) => {
-              return (
-                <div key={`msg-${idx}`}>
-                  <span className="font-mono font-bold">{`[${dateToTimestamp(
-                    msg.ts
-                  )}] ${msg.user}: `}</span>
-
-                  <span>{msg.content}</span>
-                </div>
-              );
-            })}
+        <div className="flex flex-grow overflow-hidden border-b-2 border-t-2 border-black">
+          <div className="h-full w-[300px] overflow-scroll border-r-2 border-black bg-slate-600 p-1">
+            <div className="flex justify-between p-2">
+              <h3 className="my-1 py-2 text-xl">Conversation History</h3>
+              <Button onClick={addNewSession} label={"New"} />
+            </div>
+            {sessions
+              .slice(0)
+              .reverse()
+              .map((sess, idx) => {
+                return (
+                  <div
+                    key={`session-${sess.title}`}
+                    className={`${
+                      idx === curSessionIdx ? "bg-slate-500" : ""
+                    } p-2`}
+                    onClick={() => selectSession(idx)}
+                  >
+                    <div>{sess.title}</div>
+                    <div>{sess.ts.toISOString()}</div>
+                  </div>
+                );
+              })}
+          </div>
+          {selectedSession ? (
+            <ChatBox
+              chatHistory={selectedSession.messageHistory}
+              setChatHistory={updateCurrentSession}
+            />
+          ) : (
+            <div className="flex h-full flex-grow items-center justify-center">
+              Select a session to start
+            </div>
+          )}
         </div>
-
-        <form className="flex flex-row">
-          <input
-            id="chatInput"
-            type="text"
-            className="m-1 h-10 flex-grow rounded border border-black p-2"
-            onChange={handleChatInputChange}
-            value={message}
-          />
-          <button
-            className="m-1 rounded bg-gray-300 p-2"
-            onClick={submitMessage}
-          >
-            Send
-          </button>
-        </form>
       </div>
     </div>
   );
