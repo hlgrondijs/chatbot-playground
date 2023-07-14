@@ -1,60 +1,42 @@
+import { AssistantSession, ChatMessage } from "@prisma/client";
 import type { NextPage } from "next";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "~/components/Button";
+import { useAppContext } from "~/containers/AppContext";
 import { ChatBox } from "~/containers/ChatBox";
 
-export interface ChatMessage {
-  ts: Date;
-  content: string;
-  user: string;
-}
-
-interface AssistantSession {
-  messageHistory: ChatMessage[];
-  title: string;
-  ts: Date;
-}
-
 const ChatPage: NextPage = () => {
-  const [sessions, setSessions] = useState<AssistantSession[]>([
-    {
-      messageHistory: [],
-      title: "1",
-      ts: new Date("2020-01-01"),
-    },
-    {
-      messageHistory: [],
-      title: "2",
-      ts: new Date("2020-02-02"),
-    },
-  ]);
-  const [curSessionIdx, setCurSessionIdx] = useState<number>();
-  const [selectedSession, setSelectedSession] = useState<AssistantSession>();
+  const {
+    sessions,
+    curSessionId,
+    setCurSessionId,
+    chatHistory,
+    createSession,
+    putMessage,
+  } = useAppContext();
+  const [sessionList, setSessionList] = useState<AssistantSession[]>([]);
 
-  const updateCurrentSession = (newChatHistory: ChatMessage[]) => {
-    if (selectedSession === undefined || curSessionIdx == undefined) return;
-
-    const newS = [...sessions];
-    selectedSession.messageHistory = newChatHistory;
-    newS[curSessionIdx] = selectedSession;
-    setSessions(newS);
-  };
-
-  const selectSession = (idx: number) => {
-    const sess = sessions[idx];
-    if (sess !== undefined) {
-      setSelectedSession(sess);
-      setCurSessionIdx(idx);
-    }
-  };
+  useEffect(() => {
+    const newSessionList: AssistantSession[] = [];
+    sessions?.forEach((sess) => {
+      newSessionList.push(sess);
+    });
+    setSessionList(newSessionList);
+  }, [sessions]);
 
   const addNewSession = () => {
-    const newSession: AssistantSession = {
-      messageHistory: [],
-      title: (sessions.length + 1).toString(),
+    createSession({
+      title: (sessionList.length + 1).toString(),
+    });
+  };
+
+  const sendMessage = (msg: string) => {
+    putMessage({
+      user: "user",
       ts: new Date(),
-    };
-    setSessions([...sessions, newSession]);
+      content: msg,
+      assistantSessionId: curSessionId!,
+    });
   };
 
   return (
@@ -69,17 +51,17 @@ const ChatPage: NextPage = () => {
               <h3 className="my-1 py-2 text-xl">Conversation History</h3>
               <Button onClick={addNewSession} label={"New"} />
             </div>
-            {sessions
+            {sessionList
               .slice(0)
               .reverse()
-              .map((sess, idx) => {
+              .map((sess) => {
                 return (
                   <div
                     key={`session-${sess.title}`}
                     className={`${
-                      idx === curSessionIdx ? "bg-slate-500" : ""
+                      sess.id === curSessionId ? "bg-slate-500" : ""
                     } p-2`}
-                    onClick={() => selectSession(idx)}
+                    onClick={() => setCurSessionId(sess.id)}
                   >
                     <div>{sess.title}</div>
                     <div>{sess.ts.toISOString()}</div>
@@ -87,11 +69,8 @@ const ChatPage: NextPage = () => {
                 );
               })}
           </div>
-          {selectedSession ? (
-            <ChatBox
-              chatHistory={selectedSession.messageHistory}
-              setChatHistory={updateCurrentSession}
-            />
+          {curSessionId && sessions ? (
+            <ChatBox chatHistory={chatHistory} sendMessage={sendMessage} />
           ) : (
             <div className="flex h-full flex-grow items-center justify-center">
               Select a session to start

@@ -1,11 +1,10 @@
-import type { ChatMessage } from "~/pages/chat";
+import type { ChatMessage } from "@prisma/client";
 import { useState } from "react";
-import type { Dispatch, SetStateAction } from "react";
 import { Button } from "~/components/Button";
 
 interface ChatBoxProps {
   chatHistory: ChatMessage[];
-  setChatHistory: (history: ChatMessage[]) => void;
+  sendMessage: (msg: string) => void;
 }
 
 const dateToTimestamp = (date: Date) => {
@@ -21,7 +20,7 @@ const dateToTimestamp = (date: Date) => {
   return `${h}:${m}:${s}`;
 };
 
-export const ChatBox = ({ chatHistory, setChatHistory }: ChatBoxProps) => {
+export const ChatBox = ({ chatHistory, sendMessage }: ChatBoxProps) => {
   const [message, setMessage] = useState<string>("");
 
   const handleChatInputChange = (
@@ -32,13 +31,7 @@ export const ChatBox = ({ chatHistory, setChatHistory }: ChatBoxProps) => {
 
   const submitMessage = (event: React.SyntheticEvent) => {
     event.preventDefault();
-    const newChatHistory = [...chatHistory];
-    newChatHistory.push({
-      ts: new Date(),
-      content: message,
-      user: "user",
-    });
-    setChatHistory(newChatHistory);
+    sendMessage(message);
     setMessage("");
   };
 
