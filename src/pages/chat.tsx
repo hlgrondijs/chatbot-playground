@@ -26,7 +26,6 @@ const ChatPage: NextPage = () => {
 
   const submitMessage = (event: React.SyntheticEvent) => {
     event.preventDefault();
-    console.log("?", message);
     const newChatHistory = [...chatHistory];
     newChatHistory.push({
       ts: new Date(),
@@ -42,18 +41,6 @@ const ChatPage: NextPage = () => {
   ) => {
     setMessage(event.target.value);
   };
-
-  // useEffect(() => {
-  //   const chatInput = document.getElementById("chatInput");
-  //   chatInput?.addEventListener("keypress", function (event) {
-  //     if (event.key == "Enter") {
-  //       event.preventDefault();
-  //       submitMessage();
-  //     }
-  //   });
-  // }, []);
-
-  console.log(message);
 
   return (
     <div className="flex min-h-[100vh] items-center justify-center">
@@ -77,23 +64,22 @@ const ChatPage: NextPage = () => {
               );
             })}
         </div>
-        <div>
-          <form className="flex flex-row">
-            <input
-              id="chatInput"
-              type="text"
-              className="m-1 h-10 flex-grow rounded border border-black p-2"
-              onChange={handleChatInputChange}
-              value={message}
-            />
-            <button
-              className="m-1 rounded bg-gray-300 p-2"
-              onClick={submitMessage}
-            >
-              Send
-            </button>
-          </form>
-        </div>
+
+        <form className="flex flex-row">
+          <input
+            id="chatInput"
+            type="text"
+            className="m-1 h-10 flex-grow rounded border border-black p-2"
+            onChange={handleChatInputChange}
+            value={message}
+          />
+          <button
+            className="m-1 rounded bg-gray-300 p-2"
+            onClick={submitMessage}
+          >
+            Send
+          </button>
+        </form>
       </div>
     </div>
   );
