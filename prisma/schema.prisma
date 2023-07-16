@@ -77,7 +77,7 @@ model ChatMessage {
   id                 String            @id @default(cuid())
   ts                 DateTime
   content            String
-  user               String // Either 'user', 'assistant' or 'system'
+  sentByUser        Boolean
   AssistantSession   AssistantSession @relation(fields: [assistantSessionId], references: [id])
   assistantSessionId String
 }

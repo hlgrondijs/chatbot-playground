@@ -21,7 +21,7 @@ const ChatPage: NextPage = () => {
 
   const sendMessage = (msg: string) => {
     putMessage({
-      user: "user",
+      sentByUser: true,
       ts: new Date(),
       content: msg,
       assistantSessionId: curSessionId!,

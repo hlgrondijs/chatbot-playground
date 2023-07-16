@@ -57,7 +57,7 @@ export const ChatBox = ({ assistantSession, sendMessage }: ChatBoxProps) => {
               <div key={`msg-${idx}`}>
                 <span className="font-mono font-bold">{`[${dateToTimestamp(
                   msg.ts
-                )}] ${msg.user}: `}</span>
+                )}] ${msg.sentByUser ? "user" : "assistant"}: `}</span>
 
                 <span>{msg.content}</span>
               </div>
