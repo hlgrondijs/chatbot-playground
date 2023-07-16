@@ -78,6 +78,6 @@ model ChatMessage {
   ts                 DateTime
   content            String
   user               String // Either 'user', 'assistant' or 'system'
-  AssistantSession   AssistantSession? @relation(fields: [assistantSessionId], references: [id])
-  assistantSessionId String?
+  AssistantSession   AssistantSession @relation(fields: [assistantSessionId], references: [id])
+  assistantSessionId String
 }

@@ -1,4 +1,4 @@
-import { AssistantSession, ChatMessage } from "@prisma/client";
+import { AssistantSession } from "@prisma/client";
 import type { NextPage } from "next";
 import { useEffect, useState } from "react";
 import { Button } from "~/components/Button";
