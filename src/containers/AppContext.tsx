@@ -8,11 +8,21 @@ import React, {
 import type { AssistantSession, ChatMessage } from "@prisma/client";
 import { api } from "~/utils/api";
 
+interface sessionListItem {
+  id: string;
+  ts: Date;
+  title: string;
+}
+
+export type AssistantSessionInclude = AssistantSession & {
+  messageHistory: ChatMessage[];
+};
+
 type AppContext = {
-  sessions: Map<string, AssistantSession> | undefined;
+  sessions: sessionListItem[];
+  curSession: AssistantSessionInclude | undefined;
   curSessionId: string | undefined;
   setCurSessionId: React.Dispatch<React.SetStateAction<string | undefined>>;
-  chatHistory: ChatMessage[];
   createSession: ReturnType<
     typeof api.chat.createAssistantSession.useMutation
   >["mutate"];
@@ -30,16 +40,21 @@ export const useAppContext = () => {
 };
 
 export function AppContextProvider({ children }: PropsWithChildren) {
-  const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
+  const [curSession, setCurSession] = useState<AssistantSessionInclude>();
   const [curSessionId, setCurSessionId] = useState<string>();
+  const [sessions, setSessions] = useState<sessionListItem[]>([]);
 
-  const { data: sessions } = api.chat.listAssistantSessions.useQuery();
+  api.chat.listAssistantSessions.useQuery(undefined, {
+    onSuccess: (data) => {
+      setSessions(data ? data : []);
+    },
+  });
 
-  api.chat.getChatHistory.useQuery(
-    { assistantSessionId: curSessionId },
+  api.chat.getAssistantSession.useQuery(
+    { id: curSessionId },
     {
       onSuccess: (data) => {
-        setChatHistory(data ? data : []);
+        setCurSession(data ? data : undefined);
       },
     }
   );
@@ -55,20 +70,20 @@ export function AppContextProvider({ children }: PropsWithChildren) {
 
   const { mutate: putMessage } = api.chat.putMessage.useMutation({
     onSuccess: async () => {
-      await util.chat.getChatHistory.invalidate();
+      await util.chat.getAssistantSession.invalidate();
     },
   });
 
   const providerValue = useMemo(() => {
     return {
       sessions,
+      curSession,
       curSessionId,
       setCurSessionId,
-      chatHistory,
       createSession,
       putMessage,
     };
-  }, [chatHistory, createSession, curSessionId, putMessage, sessions]);
+  }, [createSession, curSessionId, curSession, putMessage, sessions]);
 
   return (
     <AppContext.Provider value={providerValue}>{children}</AppContext.Provider>

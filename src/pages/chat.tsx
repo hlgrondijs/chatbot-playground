@@ -1,6 +1,4 @@
-import { AssistantSession } from "@prisma/client";
 import type { NextPage } from "next";
-import { useEffect, useState } from "react";
 import { Button } from "~/components/Button";
 import { useAppContext } from "~/containers/AppContext";
 import { ChatBox } from "~/containers/ChatBox";
@@ -8,25 +6,16 @@ import { ChatBox } from "~/containers/ChatBox";
 const ChatPage: NextPage = () => {
   const {
     sessions,
+    curSession,
     curSessionId,
     setCurSessionId,
-    chatHistory,
     createSession,
     putMessage,
   } = useAppContext();
-  const [sessionList, setSessionList] = useState<AssistantSession[]>([]);
-
-  useEffect(() => {
-    const newSessionList: AssistantSession[] = [];
-    sessions?.forEach((sess) => {
-      newSessionList.push(sess);
-    });
-    setSessionList(newSessionList);
-  }, [sessions]);
 
   const addNewSession = () => {
     createSession({
-      title: (sessionList.length + 1).toString(),
+      title: (sessions.length + 1).toString(),
     });
   };
 
@@ -51,7 +40,7 @@ const ChatPage: NextPage = () => {
               <h3 className="my-1 py-2 text-xl">Conversation History</h3>
               <Button onClick={addNewSession} label={"New"} />
             </div>
-            {sessionList
+            {sessions
               .slice(0)
               .reverse()
               .map((sess) => {
@@ -69,8 +58,8 @@ const ChatPage: NextPage = () => {
                 );
               })}
           </div>
-          {curSessionId && sessions ? (
-            <ChatBox chatHistory={chatHistory} sendMessage={sendMessage} />
+          {curSession ? (
+            <ChatBox assistantSession={curSession} sendMessage={sendMessage} />
           ) : (
             <div className="flex h-full flex-grow items-center justify-center">
               Select a session to start

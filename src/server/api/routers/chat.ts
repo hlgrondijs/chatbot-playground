@@ -1,6 +1,5 @@
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure } from "../trpc";
-import type { AssistantSession } from "@prisma/client";
 
 const putMessageSchema = z.object({
   ts: z.date(),
@@ -15,6 +14,10 @@ const createAssistantSessionSchema = z.object({
 
 const getChatHistorySchema = z.object({
   assistantSessionId: z.string().nullish(),
+});
+
+const getAssistantSessionSchema = z.object({
+  id: z.string().nullish(),
 });
 
 export const chatRouter = createTRPCRouter({
@@ -43,16 +46,27 @@ export const chatRouter = createTRPCRouter({
       });
     }),
 
-  listAssistantSessions: publicProcedure.query(async ({ input, ctx }) => {
-    const allSessions = await ctx.prisma.assistantSession.findMany();
-
-    // Create a Sessions map <id, Session>.
-    const sessions: Map<string, AssistantSession> = new Map();
-    allSessions.forEach((session) => {
-      sessions.set(session.id, session);
+  listAssistantSessions: publicProcedure.query(async ({ ctx }) => {
+    return await ctx.prisma.assistantSession.findMany({
+      include: {
+        messageHistory: false,
+      },
     });
-    return sessions;
   }),
+
+  getAssistantSession: publicProcedure
+    .input(getAssistantSessionSchema)
+    .query(async ({ input, ctx }) => {
+      if (!input.id) return;
+      return await ctx.prisma.assistantSession.findFirst({
+        where: {
+          id: input.id,
+        },
+        include: {
+          messageHistory: true,
+        },
+      });
+    }),
 
   createAssistantSession: publicProcedure
     .input(createAssistantSessionSchema)

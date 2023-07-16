@@ -1,9 +1,9 @@
-import type { ChatMessage } from "@prisma/client";
 import { useState } from "react";
 import { Button } from "~/components/Button";
+import type { AssistantSessionInclude } from "./AppContext";
 
 interface ChatBoxProps {
-  chatHistory: ChatMessage[];
+  assistantSession: AssistantSessionInclude;
   sendMessage: (msg: string) => void;
 }
 
@@ -20,7 +20,7 @@ const dateToTimestamp = (date: Date) => {
   return `${h}:${m}:${s}`;
 };
 
-export const ChatBox = ({ chatHistory, sendMessage }: ChatBoxProps) => {
+export const ChatBox = ({ assistantSession, sendMessage }: ChatBoxProps) => {
   const [message, setMessage] = useState<string>("");
 
   const handleChatInputChange = (
@@ -36,31 +36,34 @@ export const ChatBox = ({ chatHistory, sendMessage }: ChatBoxProps) => {
   };
 
   return (
-    <div className="bg-slate-10 m-1 flex h-full flex-grow flex-col-reverse overflow-scroll pb-1">
-      <form className="flex flex-row px-2">
-        <input
-          id="chatInput"
-          type="text"
-          className="m-1 h-10 flex-grow rounded border border-black p-2"
-          onChange={handleChatInputChange}
-          value={message}
-        />
-        <Button onClick={submitMessage} label={"Send"} />
-      </form>
-      {chatHistory
-        .slice(0)
-        .reverse()
-        .map((msg, idx) => {
-          return (
-            <div key={`msg-${idx}`}>
-              <span className="font-mono font-bold">{`[${dateToTimestamp(
-                msg.ts
-              )}] ${msg.user}: `}</span>
+    <div className="flex h-full w-full flex-col">
+      <div className="bg-slate-300">{`ID: ${assistantSession.id} Title: ${assistantSession.title}`}</div>
+      <div className="m-1 flex  flex-grow flex-col-reverse overflow-scroll pb-1">
+        <form className="flex flex-row px-2">
+          <input
+            id="chatInput"
+            type="text"
+            className="m-1 h-10 flex-grow rounded border border-black p-2"
+            onChange={handleChatInputChange}
+            value={message}
+          />
+          <Button onClick={submitMessage} label={"Send"} />
+        </form>
+        {assistantSession.messageHistory
+          .slice(0)
+          .reverse()
+          .map((msg, idx) => {
+            return (
+              <div key={`msg-${idx}`}>
+                <span className="font-mono font-bold">{`[${dateToTimestamp(
+                  msg.ts
+                )}] ${msg.user}: `}</span>
 
-              <span>{msg.content}</span>
-            </div>
-          );
-        })}
+                <span>{msg.content}</span>
+              </div>
+            );
+          })}
+      </div>
     </div>
   );
 };
