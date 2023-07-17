@@ -1,5 +1,6 @@
 import type { ChatMessage } from "@prisma/client";
 import {
+  ChatCompletionRequestMessage,
   ChatCompletionRequestMessageRoleEnum,
   ChatCompletionResponseMessage,
   Configuration,
@@ -18,19 +19,27 @@ export class GptService {
     this.openAIClient = new OpenAIApi(
       new Configuration({ apiKey: process.env.OPENAI_API_KEY })
     );
-    console.log(process.env.OPENAI_API_KEY, this.openAIClient);
     this.model = "gpt-3.5-turbo";
-    this.temperature = 0.5;
+    this.temperature = 0.1;
   }
 
   public chatMessagesToGptMessages(messageHistory: ChatMessage[]) {
-    const msgs = messageHistory.map((msg) => ({
-      role: msg.sentByUser
-        ? ChatCompletionRequestMessageRoleEnum.User
-        : ChatCompletionRequestMessageRoleEnum.Assistant,
-      content: msg.content,
-      name: msg.sentByUser ? "User" : "Assistant",
-    }));
+    const msgs = messageHistory.map(
+      (msg) =>
+        ({
+          role: msg.sentByUser
+            ? ChatCompletionRequestMessageRoleEnum.User
+            : ChatCompletionRequestMessageRoleEnum.Assistant,
+          content: msg.content,
+          name: msg.sentByUser ? "User" : "Assistant",
+        } as ChatCompletionRequestMessage)
+    );
+    const initialPrompt = {
+      role: ChatCompletionRequestMessageRoleEnum.System,
+      content: "Je mag alleen in het Nederlands antwoorden",
+      name: "het_systeem",
+    };
+    msgs.unshift(initialPrompt);
     return msgs;
   }
 
@@ -40,8 +49,6 @@ export class GptService {
 
     const curhist = this.chatMessagesToGptMessages(messageHistory);
 
-    console.log(curhist);
-
     const chatCompletion = await this.openAIClient.createChatCompletion({
       model: this.model,
       temperature: this.temperature,
@@ -49,8 +56,6 @@ export class GptService {
     });
 
     const responseMessage = chatCompletion.data.choices[0]?.message;
-
-    console.log(responseMessage);
 
     return responseMessage;
   }

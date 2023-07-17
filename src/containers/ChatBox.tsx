@@ -39,7 +39,7 @@ export const ChatBox = ({ assistantSession, sendMessage }: ChatBoxProps) => {
     <div className="flex h-full w-full flex-col">
       <div className="bg-slate-300">{`ID: ${assistantSession.id} Title: ${assistantSession.title}`}</div>
       <div className="m-1 flex  flex-grow flex-col-reverse overflow-scroll pb-1">
-        <form className="flex flex-row px-2">
+        <form className="flex flex-row px-1">
           <input
             id="chatInput"
             type="text"
@@ -49,20 +49,22 @@ export const ChatBox = ({ assistantSession, sendMessage }: ChatBoxProps) => {
           />
           <Button onClick={submitMessage} label={"Send"} />
         </form>
-        {assistantSession.messageHistory
-          .slice(0)
-          .reverse()
-          .map((msg, idx) => {
-            return (
-              <div key={`msg-${idx}`}>
-                <span className="font-mono font-bold">{`[${dateToTimestamp(
-                  msg.ts
-                )}] ${msg.sentByUser ? "user" : "assistant"}: `}</span>
+        <div className="px-2">
+          {assistantSession.messageHistory
+            .slice(0)
+            .reverse()
+            .map((msg, idx) => {
+              return (
+                <div key={`msg-${idx}`}>
+                  <span className="font-mono font-bold">{`[${dateToTimestamp(
+                    msg.ts
+                  )}] ${msg.sentByUser ? "user" : "assistant"}: `}</span>
 
-                <span>{msg.content}</span>
-              </div>
-            );
-          })}
+                  <span>{msg.content}</span>
+                </div>
+              );
+            })}
+        </div>
       </div>
     </div>
   );

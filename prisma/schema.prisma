@@ -78,6 +78,6 @@ model ChatMessage {
   ts                 DateTime
   content            String
   sentByUser        Boolean
-  AssistantSession   AssistantSession @relation(fields: [assistantSessionId], references: [id])
+  AssistantSession   AssistantSession @relation(fields: [assistantSessionId], references: [id], onDelete: Cascade)
   assistantSessionId String
 }

@@ -8,8 +8,6 @@ import React, {
 
 import type { AssistantSession, ChatMessage } from "@prisma/client";
 import { api } from "~/utils/api";
-import { GptService } from "./GptService";
-import { Configuration, OpenAIApi } from "openai";
 
 interface sessionListItem {
   id: string;
@@ -29,8 +27,10 @@ type AppContext = {
   createSession: ReturnType<
     typeof api.chat.createAssistantSession.useMutation
   >["mutate"];
+  deleteSession: ReturnType<
+    typeof api.chat.deleteAssistantSession.useMutation
+  >["mutate"];
   putMessage: ReturnType<typeof api.chat.putMessage.useMutation>["mutate"];
-  //   sendMessage: (msg: string) => void;
 };
 
 const AppContext = React.createContext<AppContext | null>(null);
@@ -48,11 +48,6 @@ export function AppContextProvider({ children }: PropsWithChildren) {
   const [curSessionId, setCurSessionId] = useState<string>();
   const [sessions, setSessions] = useState<sessionListItem[]>([]);
 
-  const gptService = useMemo(() => {
-    console.log(process.env.OPENAI_API_KEY);
-    return new GptService();
-  }, []);
-
   api.chat.listAssistantSessions.useQuery(undefined, {
     onSuccess: (data) => {
       setSessions(data ? data : []);
@@ -65,6 +60,7 @@ export function AppContextProvider({ children }: PropsWithChildren) {
       onSuccess: (data) => {
         setCurSession(data ? data : undefined);
       },
+      retry: false,
     }
   );
 
@@ -79,35 +75,18 @@ export function AppContextProvider({ children }: PropsWithChildren) {
 
   const { mutate: putMessage } = api.chat.putMessage.useMutation({
     onSuccess: async () => {
-      await util.chat.getAssistantSession.invalidate();
+      await util.chat.getAssistantSession.refetch();
     },
   });
 
-  //   const sendMessage = useCallback(
-  //     async (msg: string) => {
-  //       if (!curSession) return;
-  //       console.log(msg, curSessionId, curSession);
-  //       putMessage({
-  //         sentByUser: true,
-  //         ts: new Date(),
-  //         content: msg,
-  //         assistantSessionId: curSession.id,
-  //       });
-
-  //       const response = await gptService2.generateResponse(
-  //         curSession.messageHistory
-  //       );
-  //       if (!response || !response.content) return;
-  //       console.log(response.content);
-  //       putMessage({
-  //         sentByUser: false,
-  //         ts: new Date(),
-  //         content: response.content,
-  //         assistantSessionId: curSession.id,
-  //       });
-  //     },
-  //     [curSession, gptService]
-  //   );
+  const { mutate: deleteSession } = api.chat.deleteAssistantSession.useMutation(
+    {
+      onSuccess: async () => {
+        await util.chat.listAssistantSessions.invalidate();
+        await util.chat.getAssistantSession.refetch();
+      },
+    }
+  );
 
   const providerValue = useMemo(() => {
     return {
@@ -116,16 +95,16 @@ export function AppContextProvider({ children }: PropsWithChildren) {
       curSessionId,
       setCurSessionId,
       createSession,
+      deleteSession,
       putMessage,
-      //   sendMessage,
     };
   }, [
     createSession,
+    deleteSession,
     curSessionId,
     curSession,
     putMessage,
     sessions,
-    // sendMessage,
   ]);
 
   return (

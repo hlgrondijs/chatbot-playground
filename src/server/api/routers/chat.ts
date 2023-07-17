@@ -13,6 +13,10 @@ const createAssistantSessionSchema = z.object({
   title: z.string(),
 });
 
+const deleteAssistantSessionSchema = z.object({
+  id: z.string(),
+});
+
 const getChatHistorySchema = z.object({
   assistantSessionId: z.string().nullish(),
 });
@@ -27,6 +31,15 @@ export const chatRouter = createTRPCRouter({
   putMessage: publicProcedure
     .input(putMessageSchema)
     .mutation(async ({ input, ctx }) => {
+      await ctx.prisma.chatMessage.create({
+        data: {
+          ts: input.ts,
+          content: input.content,
+          sentByUser: input.sentByUser,
+          assistantSessionId: input.assistantSessionId,
+        },
+      });
+
       const session = await ctx.prisma.assistantSession.findFirst({
         where: {
           id: input.assistantSessionId,
@@ -36,20 +49,13 @@ export const chatRouter = createTRPCRouter({
         },
       });
 
-      if (!session) return; // Invalid session id
-      console.log(session.messageHistory);
+      if (!session) {
+        // Invalid session id
+        throw new Error("invalid sessionid in putMessage");
+      }
       const response = await gptService.generateResponse(
         session.messageHistory
       );
-
-      await ctx.prisma.chatMessage.create({
-        data: {
-          ts: input.ts,
-          content: input.content,
-          sentByUser: input.sentByUser,
-          assistantSessionId: input.assistantSessionId,
-        },
-      });
 
       await ctx.prisma.chatMessage.create({
         data: {
@@ -84,7 +90,9 @@ export const chatRouter = createTRPCRouter({
   getAssistantSession: publicProcedure
     .input(getAssistantSessionSchema)
     .query(async ({ input, ctx }) => {
-      if (!input.id) return;
+      if (!input.id) {
+        throw new Error(`Cant getAssistantSession if id is nullish`);
+      }
       return await ctx.prisma.assistantSession.findFirst({
         where: {
           id: input.id,
@@ -101,6 +109,16 @@ export const chatRouter = createTRPCRouter({
       await ctx.prisma.assistantSession.create({
         data: {
           title: input.title,
+        },
+      });
+    }),
+
+  deleteAssistantSession: publicProcedure
+    .input(deleteAssistantSessionSchema)
+    .mutation(async ({ input, ctx }) => {
+      await ctx.prisma.assistantSession.delete({
+        where: {
+          id: input.id,
         },
       });
     }),
